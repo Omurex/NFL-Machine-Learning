@@ -4,17 +4,6 @@ from pathlib import Path
 from typing import List
 from sklearn.linear_model import LinearRegression
 
-def linearRegression():
-
-    X = np.array([[1, 1], [1, 2], [2, 2], [2, 3]])
-    y = np.dot(X, np.array([1, 2])) + 3
-
-    linReg = LinearRegression().fit(X, y)
-    print(y)
-    print(linReg.predict([[1, 3], [2, 8]]))
-
-    print(linReg.score([[1,3], [2,9]], [10, 21]))
-
 
 # Read all the data from the CSV file and put into an array
 def readCSV(file_path: Path) -> list[list]:
@@ -50,6 +39,17 @@ def replace_na_with_averages(no_na_data, data) -> list[list[float]]:
     col_avg = [sum(col) / len(col) for col in no_na_data]
     filtered_data = [[col_avg if val == "NA" else float(val) for val, col_avg in zip(row, col_avg)] for row in data]
     return filtered_data
+
+
+def linearRegression():
+    X = np.array([[1, 1], [1, 2], [2, 2], [2, 3]])
+    y = np.dot(X, np.array([1, 2])) + 3
+
+    linReg = LinearRegression().fit(X, y)
+    print(y)
+    print(linReg.predict([[1, 3], [2, 8]]))
+
+    print(linReg.score([[1,3], [2,9]], [10, 21]))
 
 
 if __name__ == '__main__':
