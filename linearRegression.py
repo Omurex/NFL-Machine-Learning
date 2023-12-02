@@ -1,6 +1,19 @@
 import csv
+import numpy as np
 from pathlib import Path
 from typing import List
+from sklearn.linear_model import LinearRegression
+
+def linearRegression():
+
+    X = np.array([[1, 1], [1, 2], [2, 2], [2, 3]])
+    y = np.dot(X, np.array([1, 2])) + 3
+
+    linReg = LinearRegression().fit(X, y)
+    print(y)
+    print(linReg.predict([[1, 3], [2, 8]]))
+
+    print(linReg.score([[1,3], [2,9]], [10, 21]))
 
 
 # Read all the data from the CSV file and put into an array
@@ -56,3 +69,5 @@ if __name__ == '__main__':
     # Changed all "NA" data points to be the column average
     na_to_avg_data = replace_na_with_averages(no_na_data, full_data)
     print(na_to_avg_data[:5])
+
+    linearRegression()
