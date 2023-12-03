@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import List
 from sklearn.linear_model import LinearRegression
 import re
+import random
 
 
 # Read all the data from the CSV file and put into an array
@@ -13,7 +14,7 @@ def readCSV(file_path: Path) -> tuple[list[list[float]], list[int]]:
     with open(file_path, 'r') as f:
         reader = csv.reader(f)
         header = next(reader)
-        selected_cols = [4, 5, 6, 7, 8, 9, 10, 11]
+        selected_cols = [5, 8, 9, 10, 11] #[4, 5, 6, 7, 8, 9, 10, 11]
         pick_data_col = 12 # Column that pick data can be found in
 
         player_data = [] # Holds return data for player stats
@@ -136,19 +137,48 @@ if __name__ == '__main__':
     # Contains all data points, don't use
     full_player_data, pick_data = readCSV(p.absolute())
 
+    joined_data = list(zip(full_player_data, pick_data))
+    random.shuffle(joined_data)
+    full_player_data, pick_data = zip(*joined_data)
+
     # Contains only the data points with every column completed
     no_na_player_data, no_na_pick_data = remove_na_players(full_player_data, pick_data)
-    print(no_na_player_data[:5])
+    #print(no_na_player_data[:5])
 
     # Changed all "NA" data points to be 0
     na_to_0_data = replace_na_with_zero(full_player_data)
-    print(na_to_0_data[:5])
+    #print(na_to_0_data[:5])
 
     # Changed all "NA" data points to be the column average
     na_to_avg_data = replace_na_with_averages(no_na_player_data, full_player_data)
-    print(na_to_avg_data[:5])
+    #print(na_to_avg_data[:5])
 
-    linReg = calculateLinearRegression(no_na_player_data, no_na_pick_data)
+
+    train_data = no_na_player_data[:800]
+    train_answers = no_na_pick_data[:800]
+
+    test_data = no_na_player_data[800:]
+    test_answers = no_na_pick_data[800:]
+
+    # # train_data = na_to_0_data[:800]
+    # # train_answers = pick_data[:800]
+
+    # # test_data = na_to_0_data[800:]
+    # # test_answers = pick_data[800:]
+
+    # # train_data = na_to_avg_data[:1000]
+    # # train_answers = pick_data[:1000]
+
+    # # test_data = na_to_avg_data[1000:]
+    # # test_answers = pick_data[1000:]
+
+    # print(len(no_na_player_data))
+
+    linReg = calculateLinearRegression(train_data, train_answers)
+    print(linReg.score(test_data, test_answers))
+    print(str(linReg.predict([test_data[0]])) + " : " + str(test_answers[0]))
+
+    #linReg = calculateLinearRegression(no_na_player_data, no_na_pick_data)
     #plotLinearRegression(linReg, no_na_player_data, no_na_pick_data, 1)
 
     # testX = np.array([[1, 1], [1.5, 2], [2, 6], [5, 3]])
