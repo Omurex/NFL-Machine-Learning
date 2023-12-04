@@ -9,8 +9,10 @@ from sklearn.linear_model import LinearRegression
 def readCSV(file_path: Path) -> list[list]:
     with open(file_path, 'r') as f:
         reader = csv.reader(f)
-        header = next(reader)
-        selected_cols = [4, 5, 6, 7, 8, 9, 10, 11]
+        headers = next(reader)
+        # for index, header in enumerate(headers):
+        #     print(f"{header}: {index}")
+        selected_cols = [4, 5, 6, 7, 8, 9, 10, 11, 13]
         data = []
 
         for row in reader:
