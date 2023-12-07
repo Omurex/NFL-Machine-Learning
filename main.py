@@ -7,11 +7,13 @@ import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error
+
 
 
 # Read all the data from the CSV file and put into an array
 # Returns list of each player's data used for prediction, and player pick number
-def read_csv(file_path: Path) -> tuple[np.ndarray, np.ndarray]:
+def read_csv(file_path: Path, position_filter="ALL") -> tuple[np.ndarray, np.ndarray]:
     with open(file_path, 'r') as f:
         reader = csv.reader(f)
         headers = next(reader)
@@ -28,6 +30,9 @@ def read_csv(file_path: Path) -> tuple[np.ndarray, np.ndarray]:
             if pick_str == "NA":
                 continue
 
+            if position_filter != "ALL" and row[16] != position_filter:
+                continue
+
             # https://stackoverflow.com/questions/1450897/remove-characters-except-digits-from-string-using-python
             # Gets rid of all non-digits in the string
             # Example: Arizona Cardinals / 1st / 31st pick / 2009
@@ -38,6 +43,25 @@ def read_csv(file_path: Path) -> tuple[np.ndarray, np.ndarray]:
             player_data.append(row_vals)
 
         return np.array(player_data), np.array(pick_number)
+
+
+def get_unique_positions(file_path):
+    unique_positions = set()
+
+    with open(file_path, 'r') as f:
+        reader = csv.reader(f)
+        headers = next(reader)  # Read the header row to get column names
+
+        # Assuming the "Position" column is the 17th column (0-based index)
+        position_column_index = 16
+
+        for row in reader:
+            if len(row) > position_column_index:
+                position = row[position_column_index].strip()
+                if position:
+                    unique_positions.add(position)
+
+    return list(unique_positions)
 
 
 # Delete any data points that have "NA" for any of the physical tests
@@ -119,11 +143,45 @@ def plot_linear_regression(linear_regression: LinearRegression, player_training_
     pass
 
 
-if __name__ == '__main__':
-    p = Path(__file__).with_name('NFL.csv')
+def run_random_forest(data_path, position_filter="ALL") -> None:
+    player_data, player_pick_data = read_csv(data_path.absolute(), position_filter=position_filter)
+    player_joined_data = list(zip(player_data, player_pick_data))
+    random.shuffle(player_joined_data)
+    shuffled_player_data, shuffled_pick_data = zip(*player_joined_data)
 
+    minimum_sample_size = 50
+
+    # Contains only the data points with every column completed
+    no_na_player_data, no_na_pick_data = remove_na_players(shuffled_player_data, shuffled_pick_data)
+
+    player_avg_data = replace_na_with_averages(no_na_player_data, shuffled_player_data)
+
+    features = player_avg_data
+    target = shuffled_pick_data
+
+    if len(features) < minimum_sample_size:
+        print("------------------------")
+        print(f'Cannot run analysis on {position_filter}, not enough data points ({len(features)})')
+        return
+
+    x_train, x_test, y_train, y_test = train_test_split(features, target, test_size=0.2)
+
+    rf_reg = calculate_random_forest_regression(x_train, y_train)
+    predictions = rf_reg.predict(x_test)
+    rf_score = rf_reg.score(x_test, y_test)
+    mae = mean_absolute_error(y_test, predictions)
+
+    # Output results to console
+    print("------------------------")
+    print(f'Random Forest Results for: {position_filter}')
+    print(f'Number of data points: {len(features)}')
+    print(f'R-squared: {rf_score}')
+    print("Mean Absolute Error:", mae)
+
+
+def run_linear_regression(data_path) -> None:
     # Contains all data points, don't use
-    full_player_data, pick_data = read_csv(p.absolute())
+    full_player_data, pick_data = read_csv(data_path.absolute())
 
     joined_data = list(zip(full_player_data, pick_data))
     random.shuffle(joined_data)
@@ -149,15 +207,14 @@ if __name__ == '__main__':
     print("Linear Regression Results:")
     print("R-squared Score: ", lin_reg_score)
 
-    # Running random forest on N/A replaced by Col AVG
-    forest_test_data = na_to_avg_data[1000:]
-    forest_test_answers = pick_data[1000:]
 
-    rf_reg = calculate_random_forest_regression(features, target)
-    predictions = rf_reg.predict(forest_test_data)
-    rf_score = rf_reg.score(forest_test_data, forest_test_answers)
+if __name__ == '__main__':
+    p = Path(__file__).with_name('NFL.csv')
 
-    # Output results to console
-    print("------------------------")
-    print("Random Forest Results:")
-    print(f'R-squared: {rf_score}')
+    run_linear_regression(p)
+
+    # Run a random forest analysis on all positions at once then once on each unique position
+    run_random_forest(p)
+    position_list = get_unique_positions(p.absolute())
+    for position in position_list:
+        run_random_forest(p, position_filter=position)
