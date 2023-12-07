@@ -2,12 +2,14 @@ import re
 import csv
 import random
 import numpy as np
-import matplotlib.pyplot as plt
+from numpy import array
 from pathlib import Path
+import matplotlib.pyplot as plt
+from sklearn.datasets import data
+from sklearn.metrics import classification_report
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
-import re
-import random
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 
 
@@ -64,54 +66,26 @@ def replace_na_with_averages(no_na_data, data) -> list[list[float]]:
     return filtered_data
 
 
-def calculateLinearRegression(playerTrainingData: list[list[float]], playerDraftPick: list[int]) -> LinearRegression:
+def calculate_linear_regression(player_training_data: list[list[float]], player_draft_pick: list[int]) -> object:
     # https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html
-
-    # X = Array of arrays of data (will be height, weight, long jump dist, etc. in each inner array)
-    # y = Array of predicted values (will be pick #)
-    # LinearRegression().fit() = Calculating the actual linear regression line
-    # .predict() = Uses linear regression line to predict y values using passed in X
-    # .score() = Calculates R^2 given X and real y
-
-    # X = np.array([[1, 1], [1, 2], [2, 2], [2, 3]])
-    # y = np.dot(X, np.array([1, 2])) + 3
-
-    linReg = LinearRegression().fit(playerTrainingData, playerDraftPick)
-
-    # print(playerDraftPick)
-    # print(linReg.predict([[1, 3], [2, 8]]))
-
-    # print(linReg.score([[1,3], [2,9]], [10, 21]))
-
-    return linReg
+    lin_regression = LinearRegression().fit(player_training_data, player_draft_pick)
+    return lin_regression
 
 
-def calculateRandomForestRegression(playerTrainingData: list[list[float]],
-                                    playerDraftPick: list[int]) -> RandomForestRegressor:
+def calculate_random_forest_regression(player_training_data: list[list[float]],
+                                       player_draft_pick: list[int]) -> RandomForestRegressor:
     """
     Train a random forest regression model to predict draft pick numbers based on player training data.
     """
 
     # Scikit Random Forest Regressor Documentation:
     # https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html
-    rfRegressor = RandomForestRegressor(n_estimators=100, random_state=8)
+    rf_regressor = RandomForestRegressor(n_estimators=100, random_state=8)
 
     # Fit the regressor to the training data
-    rfRegressor.fit(playerTrainingData, playerDraftPick)
+    rf_regressor.fit(player_training_data, player_draft_pick)
 
-    return rfRegressor
-
-
-# The problem with this function is that we are trying to make a straight line in two dimensions out of a straight line in 8 dimensions. So, not very useful as a visual
-# xAxisDataIndex : Index in array of parsed data that should be used as the x axis variable when displaying linear regression line
-def plotLinearRegression(linearRegression: LinearRegression, playerTrainingData: list[list[float]],
-                         playerDraftPick: list[int], xAxisDataIndex: int):
-    scatterXData: list[float] = []
-
-
-def calculate_linear_regression(player_training_data: np.ndarray, player_draft_pick: np.ndarray) -> object:
-    lin_reg = LinearRegression().fit(player_training_data, player_draft_pick)
-    return lin_reg
+    return rf_regressor
 
 
 # The problem with this function is that we are trying to make a straight line in two dimensions out of a straight line
@@ -149,13 +123,6 @@ def plot_linear_regression(linear_regression: LinearRegression, player_training_
     pass
 
 
-# testX = np.array([[1, 1], [1, 2], [2, 2], [2, 3]])
-# testY = np.dot(testX, np.array([1, 2])) + 3
-
-# linReg = calculateLinearRegression(testX, testY)
-# plotLinearRegression(linReg, testX, testY, 0)
-
-
 if __name__ == '__main__':
     p = Path(__file__).with_name('NFL.csv')
 
@@ -177,36 +144,37 @@ if __name__ == '__main__':
 
     x_train, x_test, y_train, y_test = train_test_split(features, target, test_size=0.2)
 
-    # linReg = calculate_linear_regression(train_data, train_answers)
-    # print(linReg.score(test_data, test_answers))
-    # print(str(linReg.predict([test_data[0]])) + " : " + str(test_answers[0]))
-
+    # Running linear regression
     model = LinearRegression()
     model.fit(x_train, y_train)
-    y_prediction = model.predict(x_test)
-    linReg = calculate_linear_regression(x_train, y_train)
-    r2_score = linReg.score(x_test, y_test)
-    print("R-squared Score: ", r2_score)
+    lin_y_prediction = model.predict(x_test)
+    lin_reg = calculate_linear_regression(x_train, y_train)
+    lin_reg_score = lin_reg.score(x_test, y_test)
+    print("Linear Regression Results:")
+    print("R-squared Score: ", lin_reg_score)
 
-    # linReg = calculateLinearRegression(no_na_player_data, no_na_pick_data)
-    # plotLinearRegression(linReg, no_na_player_data, no_na_pick_data, 1)
+    # Running logistic regression
+    log_x = na_to_avg_data
+    log_y = pick_data
+    class_names = np.array(['Yes', 'No'], dtype=object)
+    x_train_log, x_test_log, y_train_log, y_test_log = train_test_split(log_x, log_y, test_size=0.2)
 
-    # testX = np.array([[1, 1], [1.5, 2], [2, 6], [5, 3]])
-    # testY = np.dot(testX, np.array([1])) + 3
-    # testY = [2, 3, 4, 5]
-
-    # testLinReg = calculateLinearRegression(testX, testY)
-    # plotLinearRegression(testLinReg, testX, testY, 0)
+    log_reg = LogisticRegression(max_iter=5000, solver='liblinear')
+    results_log_reg = log_reg.fit(x_train_log, y_train_log)
+    log_y_prediction = log_reg.predict(x_test_log)
+    print("------------------------")
+    print("Logistic Regression Results:")
+    # print(classification_report(y_test_log, log_y_prediction, target_names=class_names))
 
     # Running random forest on N/A replaced by Col AVG
     forest_test_data = na_to_avg_data[1000:]
     forest_test_answers = pick_data[1000:]
 
-    rfReg = calculateRandomForestRegression(train_data, train_answers)
-    predictions = rfReg.predict(forest_test_data)
-    score = rfReg.score(forest_test_data, forest_test_answers)
+    rf_reg = calculate_random_forest_regression(features, target)
+    predictions = rf_reg.predict(forest_test_data)
+    rf_score = rf_reg.score(forest_test_data, forest_test_answers)
 
     # Output results to console
-    print(f'------------------------')
-    print(f'Random Forest Results:')
-    print(f'Random Forest R^2: {score}')
+    print("------------------------")
+    print("Random Forest Results:")
+    print(f'R-squared: {rf_score}')
