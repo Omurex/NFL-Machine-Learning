@@ -2,14 +2,10 @@ import re
 import csv
 import random
 import numpy as np
-from numpy import array
 from pathlib import Path
 import matplotlib.pyplot as plt
-from sklearn.datasets import data
-from sklearn.metrics import classification_report
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 
 
@@ -152,19 +148,6 @@ if __name__ == '__main__':
     lin_reg_score = lin_reg.score(x_test, y_test)
     print("Linear Regression Results:")
     print("R-squared Score: ", lin_reg_score)
-
-    # Running logistic regression
-    log_x = na_to_avg_data
-    log_y = pick_data
-    class_names = np.array(['Yes', 'No'], dtype=object)
-    x_train_log, x_test_log, y_train_log, y_test_log = train_test_split(log_x, log_y, test_size=0.2)
-
-    log_reg = LogisticRegression(max_iter=5000, solver='liblinear')
-    results_log_reg = log_reg.fit(x_train_log, y_train_log)
-    log_y_prediction = log_reg.predict(x_test_log)
-    print("------------------------")
-    print("Logistic Regression Results:")
-    # print(classification_report(y_test_log, log_y_prediction, target_names=class_names))
 
     # Running random forest on N/A replaced by Col AVG
     forest_test_data = na_to_avg_data[1000:]
