@@ -3,19 +3,17 @@ import csv
 import random
 import numpy as np
 import matplotlib.pyplot as plt
-from typing import List
 from pathlib import Path
 from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
 
 
 # Read all the data from the CSV file and put into an array
 # Returns list of each player's data used for prediction, and player pick number
-def readCSV(file_path: Path) -> tuple[list[list[float]], list[int]]:
+def read_csv(file_path: Path) -> tuple[np.ndarray, np.ndarray]:
     with open(file_path, 'r') as f:
         reader = csv.reader(f)
         headers = next(reader)
-        # for index, header in enumerate(headers):
-        #     print(f"{header}: {index}")
         selected_cols = [4, 5, 6, 7, 8, 9, 10, 11, 13]
         pick_data_col = 12  # Column that pick data can be found in
         data = []
@@ -38,13 +36,12 @@ def readCSV(file_path: Path) -> tuple[list[list[float]], list[int]]:
             row_vals = [row[col] for col in selected_cols]
             player_data.append(row_vals)
 
-
-        return player_data, pick_number
+        return np.array(player_data), np.array(pick_number)
 
 
 # Delete any data points that have "NA" for any of the physical tests
 # Completed with the help of ChatGPT
-def remove_na_players(player_data, pick_data) -> list[list[float]]:
+def remove_na_players(player_data, pick_data) -> tuple[list[list[float]], list[int]]:
     filtered_player_data = [[float(val) for val in row] for row in player_data if "NA" not in row]
     filtered_pick_data = []
 
@@ -56,13 +53,6 @@ def remove_na_players(player_data, pick_data) -> list[list[float]]:
     return filtered_player_data, filtered_pick_data
 
 
-# # Replace every instance of "NA" with a 0
-# # Completed with the help of ChatGPT
-# def replace_na_with_zero(data) -> list[list[float]]:
-#     filtered_data = [[float(0) if val == "NA" else float(val) for val in row] for row in data]
-#     return filtered_data
-
-
 # Replace every instance of "NA" with the column average
 # Completed with the help of ChatGPT
 def replace_na_with_averages(no_na_data, data) -> list[list[float]]:
@@ -71,38 +61,41 @@ def replace_na_with_averages(no_na_data, data) -> list[list[float]]:
     return filtered_data
 
 
-def calculate_linear_regression(player_training_data: list[list[float]], player_draft_pick: list[int]) -> LinearRegression:
+def calculate_linear_regression(player_training_data: np.ndarray, player_draft_pick: np.ndarray) -> object:
     lin_reg = LinearRegression().fit(player_training_data, player_draft_pick)
     return lin_reg
 
 
-# The problem with this function is that we are trying to make a straight line in two dimensions out of a straight line in 8 dimensions. So, not very useful as a visual
-# xAxisDataIndex : Index in array of parsed data that should be used as the x axis variable when displaying linear regression line
-def plotLinearRegression(linearRegression : LinearRegression, playerTrainingData : list[list[float]], playerDraftPick : list[int], xAxisDataIndex : int):
+# The problem with this function is that we are trying to make a straight line in two dimensions out of a straight line
+    # in 8 dimensions. So, not very useful as a visual
+# xAxisDataIndex : Index in array of parsed data that should be used as the x-axis variable when displaying linea
+    # regression line
+def plot_linear_regression(linear_regression: LinearRegression, player_training_data: list[list[float]],
+                           player_draft_pick: list[int], x_axis_data_index: int):
 
-    scatterXData : list[float] = []
+    scatter_x_data: list[float] = []
 
-    for data in playerTrainingData:
-        scatterXData.append(data[xAxisDataIndex])
+    for data in player_training_data:
+        scatter_x_data.append(data[x_axis_data_index])
 
-    lineYData : list[float] = []
+    line_y_data: list[float] = []
 
-    print(linearRegression.coef_)
-    print(linearRegression.intercept_)
+    print(linear_regression.coef_)
+    print(linear_regression.intercept_)
 
-    #for i in scatterXData:
-        #lineYData.append(linearRegression.coef_[xAxisDataIndex] * i + linearRegression.intercept_)
+    # for i in scatterXData:
+    #     lineYData.append(linearRegression.coef_[xAxisDataIndex] * i + linearRegression.intercept_)
 
     # for i in range(len(scatterXData)):
     #     lineYData.append(linearRegression.predict([playerTrainingData[i]]))
 
-    lineYData = linearRegression.predict(playerTrainingData)
+    line_y_data = linear_regression.predict(player_training_data)
 
-    print(scatterXData)
-    print(lineYData)
+    print(scatter_x_data)
+    print(line_y_data)
 
-    plt.scatter(scatterXData, playerDraftPick)
-    plt.plot(scatterXData, lineYData)
+    plt.scatter(scatter_x_data, player_draft_pick)
+    plt.plot(scatter_x_data, line_y_data)
     plt.show()
 
     pass
@@ -119,7 +112,7 @@ if __name__ == '__main__':
     p = Path(__file__).with_name('NFL.csv')
 
     # Contains all data points, don't use
-    full_player_data, pick_data = readCSV(p.absolute())
+    full_player_data, pick_data = read_csv(p.absolute())
 
     joined_data = list(zip(full_player_data, pick_data))
     random.shuffle(joined_data)
@@ -127,43 +120,28 @@ if __name__ == '__main__':
 
     # Contains only the data points with every column completed
     no_na_player_data, no_na_pick_data = remove_na_players(full_player_data, pick_data)
-    #print(no_na_player_data[:5])
-
-    # Changed all "NA" data points to be 0
-    #na_to_0_data = replace_na_with_zero(full_player_data)
-    #print(na_to_0_data[:5])
 
     # Changed all "NA" data points to be the column average
     na_to_avg_data = replace_na_with_averages(no_na_player_data, full_player_data)
-    #print(na_to_avg_data[:5])
 
+    features = no_na_player_data
+    target = no_na_pick_data
 
-    train_data = no_na_player_data[:800]
-    train_answers = no_na_pick_data[:800]
+    x_train, x_test, y_train, y_test = train_test_split(features, target, test_size=0.2)
 
-    test_data = no_na_player_data[800:]
-    test_answers = no_na_pick_data[800:]
+    # linReg = calculate_linear_regression(train_data, train_answers)
+    # print(linReg.score(test_data, test_answers))
+    # print(str(linReg.predict([test_data[0]])) + " : " + str(test_answers[0]))
 
-    # train_data = na_to_0_data[:800]
-    # train_answers = pick_data[:800]
+    model = LinearRegression()
+    model.fit(x_train, y_train)
+    y_prediction = model.predict(x_test)
+    linReg = calculate_linear_regression(x_train, y_train)
+    r2_score = linReg.score(x_test, y_test)
+    print("R-squared Score: ", r2_score)
 
-    # test_data = na_to_0_data[800:]
-    # test_answers = pick_data[800:]
-
-    # train_data = na_to_avg_data[:1000]
-    # train_answers = pick_data[:1000]
-
-    # test_data = na_to_avg_data[1000:]
-    # test_answers = pick_data[1000:]
-
-    # print(len(no_na_player_data))
-
-    linReg = calculate_linear_regression(train_data, train_answers)
-    print(linReg.score(test_data, test_answers))
-    print(str(linReg.predict([test_data[0]])) + " : " + str(test_answers[0]))
-
-    #linReg = calculateLinearRegression(no_na_player_data, no_na_pick_data)
-    #plotLinearRegression(linReg, no_na_player_data, no_na_pick_data, 1)
+    # linReg = calculateLinearRegression(no_na_player_data, no_na_pick_data)
+    # plotLinearRegression(linReg, no_na_player_data, no_na_pick_data, 1)
 
     # testX = np.array([[1, 1], [1.5, 2], [2, 6], [5, 3]])
     # testY = np.dot(testX, np.array([1])) + 3
