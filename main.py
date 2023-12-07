@@ -143,7 +143,18 @@ def plot_linear_regression(linear_regression: LinearRegression, player_training_
     pass
 
 
-def run_random_forest(data_path, position_filter="ALL") -> None:
+def plot_mae_by_position(positions, maes):
+    plt.figure(figsize=(10, 6))
+    plt.bar(positions, maes, color='blue')
+    plt.xlabel('Position')
+    plt.ylabel('Mean Absolute Error')
+    plt.title('Mean Absolute Error by Position')
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+    plt.show()
+
+
+def run_random_forest(data_path, position_filter="ALL"):
     player_data, player_pick_data = read_csv(data_path.absolute(), position_filter=position_filter)
     player_joined_data = list(zip(player_data, player_pick_data))
     random.shuffle(player_joined_data)
@@ -177,6 +188,8 @@ def run_random_forest(data_path, position_filter="ALL") -> None:
     print(f'Number of data points: {len(features)}')
     print(f'R-squared: {rf_score}')
     print("Mean Absolute Error:", mae)
+
+    return position_filter, mae
 
 
 def run_linear_regression(data_path) -> None:
@@ -213,8 +226,23 @@ if __name__ == '__main__':
 
     run_linear_regression(p)
 
-    # Run a random forest analysis on all positions at once then once on each unique position
-    run_random_forest(p)
+    # Run a random forest analysis on all positions at once
+    all_positions_result = run_random_forest(p)
+
+    # Run a random forest analysis on each unique position
     position_list = get_unique_positions(p.absolute())
+    position_results = []
     for position in position_list:
-        run_random_forest(p, position_filter=position)
+        position_result = run_random_forest(p, position_filter=position)
+        if position_result is not None:
+            position_results.append(position_result)
+
+    # Convert the result of run_random_forest to a tuple
+    all_positions_result = (all_positions_result[0], all_positions_result[1])
+
+    # Extract positions and MAEs for plotting
+    all_position, all_positions_mae = all_positions_result
+    unique_positions, unique_positions_maes = zip(*position_results)
+
+    # Plot MAE by Position
+    plot_mae_by_position([all_position] + list(unique_positions), [all_positions_mae] + list(unique_positions_maes))
