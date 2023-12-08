@@ -17,7 +17,7 @@ def read_csv(file_path: Path, position_filter="ALL") -> tuple[np.ndarray, np.nda
     with open(file_path, 'r') as f:
         reader = csv.reader(f)
         headers = next(reader)
-        selected_cols = [4, 5, 6, 7, 8, 9, 10, 11, 13]
+        selected_cols = [5, 6, 7, 8, 9, 10, 11]
         pick_data_col = 12  # Column that pick data can be found in
         data = []
 
@@ -227,22 +227,22 @@ if __name__ == '__main__':
     run_linear_regression(p)
 
     # Run a random forest analysis on all positions at once
-    all_positions_result = run_random_forest(p)
+    # all_positions_result = run_random_forest(p)
 
-    # Run a random forest analysis on each unique position
-    position_list = get_unique_positions(p.absolute())
-    position_results = []
-    for position in position_list:
-        position_result = run_random_forest(p, position_filter=position)
-        if position_result is not None:
-            position_results.append(position_result)
+    # # Run a random forest analysis on each unique position
+    # position_list = get_unique_positions(p.absolute())
+    # position_results = []
+    # for position in position_list:
+    #     position_result = run_random_forest(p, position_filter=position)
+    #     if position_result is not None:
+    #         position_results.append(position_result)
 
-    # Convert the result of run_random_forest to a tuple
-    all_positions_result = (all_positions_result[0], all_positions_result[1])
+    # # Convert the result of run_random_forest to a tuple
+    # all_positions_result = (all_positions_result[0], all_positions_result[1])
 
-    # Extract positions and MAEs for plotting
-    all_position, all_positions_mae = all_positions_result
-    unique_positions, unique_positions_maes = zip(*position_results)
+    # # Extract positions and MAEs for plotting
+    # all_position, all_positions_mae = all_positions_result
+    # unique_positions, unique_positions_maes = zip(*position_results)
 
-    # Plot MAE by Position
-    plot_mae_by_position([all_position] + list(unique_positions), [all_positions_mae] + list(unique_positions_maes))
+    # # Plot MAE by Position
+    # plot_mae_by_position([all_position] + list(unique_positions), [all_positions_mae] + list(unique_positions_maes))
